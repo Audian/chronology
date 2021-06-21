@@ -1,4 +1,8 @@
 #
+# Copyright 2021, Audian, Inc. 
+#
+# Licensed under the MIT License
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -31,7 +35,7 @@ defmodule Chronology do
   # -- public functions -- #
 
   @doc "Return a range for the supplied time period"
-  @spec range(period :: atom(), timezone :: String.t()) :: map()
+  @spec range(period :: atom(), timezone :: String.t()) :: {:ok, map()} | {:error, term()}
   def range(period, timezone \\ @default_tz) do
     case period do
       :today ->
@@ -79,6 +83,33 @@ defmodule Chronology do
           Timex.now(timezone)
           |> Timex.shift(days: -7)
           |> Timex.end_of_week()
+
+        {:ok, %{start: start, finish: finish}}
+
+      :past_week ->
+        start =
+          Timex.now(timezone)
+          |> Timex.shift(days: -7)
+
+        finish = Timex.now(timezone)
+
+        {:ok, %{start: start, finish: finish}}
+
+      :past_month ->
+        start =
+          Timex.now(timezone)
+          |> Timex.shift(months: -1)
+
+        finish = Timex.now(timezone)
+
+        {:ok, %{start: start, finish: finish}}
+
+      :past_year ->
+        start =
+          Timex.now(timezone)
+          |> Timex.shift(years: -1)
+
+        finish = Timex.now(timezone)
 
         {:ok, %{start: start, finish: finish}}
 

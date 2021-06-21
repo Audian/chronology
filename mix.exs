@@ -24,7 +24,7 @@ defmodule Chronology.MixProject do
   def project do
     [
       app: :chronology,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps()
@@ -41,7 +41,7 @@ defmodule Chronology.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:timex, "~> 3.6"}
+      {:timex, "~> 3.7"}
     ]
   end
 end

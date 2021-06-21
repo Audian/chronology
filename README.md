@@ -1,21 +1,50 @@
 # Chronology
 
-**TODO: Add description**
+This is a simple wrapper around Timex to get date ranges for humanized references, 
+such as `last week`, `past year` etc.
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `chronology` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:chronology, "~> 0.1.0"}
+    {:chronology, github: "audian/chronology"}
   ]
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/chronology](https://hexdocs.pm/chronology).
 
+## Usage
+
+```elixir
+iex> Chronology.range(:past_year)
+{:ok,
+ %{
+   finish: ~U[2021-06-21 22:06:41.036959Z],
+   start: ~U[2020-06-21 22:06:41.036641Z]
+ }}
+
+ iex> Chronology.range(:past_month)
+{:ok,
+ %{
+   finish: ~U[2021-06-21 22:06:36.181093Z],
+   start: ~U[2021-05-21 22:06:36.180699Z]
+ }} 
+```
+
+## Time periods
+- `:today`
+- `:yesterday`
+- `:this_week`
+- `:this_month`
+- `:this_year`
+- `:last_week`
+- `:last_month`
+- `:last_year`
+- `:previous_year`
+- `:past_week`
+- `:past_month`
+- `:past_year`
+- `:this_quarter`
+- `:last_quarter`
