@@ -1,5 +1,5 @@
 #
-# Copyright 2021, Audian, Inc. 
+# Copyright 2021, Audian, Inc.
 #
 # Licensed under the MIT License
 #
@@ -34,7 +34,53 @@ defmodule Chronology do
 
   # -- public functions -- #
 
-  @doc "Return a range for the supplied time period"
+  @doc """
+  Return a date range for the supplied period. Time periods can be requested
+  as the period in atoms and an optional time zone. The default timezone is
+  UTC.
+
+  ### Time Periods
+
+  | time period    | Period description       |
+  |----------------|--------------------------|
+  | :today         | Today                    |
+  | :yesterday     | Yesterday                |
+  | :this_week     | The current week         |
+  | :this_month    | The current month        |
+  | :this_year     | The current year         |
+  | :this_quarter  | The current quarter      |
+  | :last_week     | The last week (Mon-Sun)  |
+  | :last_month    | The last full month      |
+  | :last_year     | The last full year       |
+  | :last_quarter  | The last quarter         |
+  | :past_week     | Past 7 days              |
+  | :past_month    | Past month (date to date)|
+  | :past_year     | Past 365 days            |
+  | :previous_year | 2 years ago              |
+
+  ```elixir
+  iex> Chronology.range(:today)
+  {:ok,
+   %{
+     finish: #DateTime<2022-11-01 23:59:59.999999-07:00 PDT America/Los_Angeles>,
+     start: #DateTime<2022-11-01 00:00:00.000000-07:00 PDT America/Los_Angeles>
+   }}
+
+  iex> Chronology.range(:yesterday, "America/Los_Angeles")
+  {:ok,
+   %{
+     finish: #DateTime<2022-10-31 23:59:59.999999-07:00 PDT America/Los_Angeles>,
+     start: #DateTime<2022-10-31 00:00:00.000000-07:00 PDT America/Los_Angeles>
+   }}
+
+  iex> Chronology.range(:last_quarter, "Asia/Calcutta")
+  {:ok,
+   %{
+     finish: #DateTime<2022-09-30 23:59:59.999999+05:30 IST Asia/Calcutta>,
+     start: #DateTime<2022-07-01 00:00:00.000000+05:30 IST Asia/Calcutta>
+   }}
+  ```
+  """
   @spec range(period :: atom(), timezone :: String.t()) :: {:ok, map()} | {:error, term()}
   def range(period, timezone \\ @default_tz) do
     case period do

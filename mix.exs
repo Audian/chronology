@@ -41,7 +41,13 @@ defmodule Chronology.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:timex, "~> 3.6"}
+      # timezone and datetime parsers
+      {:timex,    "~> 3.6"},
+
+      # code quality and documentation
+      {:ex_doc,   "~> 0.29",  only: [:dev], runtime: false},
+      {:credo,    "~> 1.6",   only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.2",   only: [:dev], runtime: false}
     ]
   end
 end
