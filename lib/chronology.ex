@@ -52,7 +52,7 @@ defmodule Chronology do
   | :last_week     | The last week (Mon-Sun)  |
   | :last_month    | The last full month      |
   | :last_year     | The last full year       |
-  | :last_quarter  | The last quarter         |
+  | :last_quarter  | The last full quarter    |
   | :past_week     | Past 7 days              |
   | :past_month    | Past month (date to date)|
   | :past_year     | Past 365 days            |
