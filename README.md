@@ -18,7 +18,7 @@ Or, if you need a specific version
 ```elixir
 def deps do
   [
-    {:chronology, git: "git@github.com:Audian/chronology.git", tag: "v1.0.0"}
+    {:chronology, git: "git@github.com:Audian/chronology.git", tag: "vX.X.X"}
   ]
 end
 ```
