@@ -8,7 +8,7 @@ jobs:
       - run: mix deps.get
       - run: mix deps.compile
       - run: mix deps.audit
-      - run: mix sobelow --config .sobelow.conf
+      - run: mix sobelow --config .sobelow-conf
       - run: mix dialyzer
 workflows:
   test:
