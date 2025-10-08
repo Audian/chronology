@@ -24,7 +24,7 @@ defmodule Chronology.MixProject do
   def project do
     [
       app: :chronology,
-      version: "1.0.0",
+      version: "1.0.1",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps()
@@ -42,12 +42,14 @@ defmodule Chronology.MixProject do
   defp deps do
     [
       # timezone and datetime parsers
-      {:timex,    "~> 3.6"},
+      {:timex,    "~> 3.7"},
 
       # code quality and documentation
-      {:ex_doc,   "~> 0.32",  only: [:dev], runtime: false},
-      {:credo,    "~> 1.7",   only: [:dev], runtime: false},
-      {:dialyxir, "~> 1.4",   only: [:dev], runtime: false}
+      {:ex_doc,     "~> 0.38",  only: [:dev], runtime: false},
+      {:credo,      "~> 1.7",   only: [:dev], runtime: false},
+      {:dialyxir,   "~> 1.4",   only: [:dev], runtime: false},
+      {:sobelow,    "~> 0.13",  only: [:dev]},
+      {:mix_audit,  "~> 2.1",   only: [:dev], runtime: false}
     ]
   end
 end
