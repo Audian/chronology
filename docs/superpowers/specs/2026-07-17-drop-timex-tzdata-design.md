@@ -90,7 +90,7 @@ Both return the same shape as `range/2` — `{:ok, %{start:, finish:}}` — for 
 **full** period (no to-date semantics), reusing the same boundary/DST helpers.
 Neither takes a `reference`: year + number fully determine the range.
 
-### `quarter(year, quarter, timezone \\ "UTC")`
+### `quarter(year, quarter, timezone \\ "Etc/UTC")`
 
 ```elixir
 @spec quarter(pos_integer(), 1..4, String.t()) :: {:ok, map()} | {:error, term()}
@@ -103,7 +103,7 @@ Neither takes a `reference`: year + number fully determine the range.
 - Example: `quarter(2026, 3)` → `2026-07-01 00:00:00.000000` ..
   `2026-09-30 23:59:59.999999`.
 
-### `week(year, week, timezone \\ "UTC")` — ISO 8601
+### `week(year, week, timezone \\ "Etc/UTC")` — ISO 8601
 
 Week starts Monday; week 1 is the week containing the first Thursday
 (equivalently, containing Jan 4). Years have 52 or 53 ISO weeks.

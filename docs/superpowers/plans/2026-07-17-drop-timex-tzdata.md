@@ -453,7 +453,7 @@ The `quarter/3` function is already written in Task 1's module body. This task a
 - Test: `test/chronology_test.exs` (append a `describe "quarter/3"` block)
 
 **Interfaces:**
-- Consumes: `Chronology.quarter(year, quarter, timezone \\ "UTC")` from Task 1.
+- Consumes: `Chronology.quarter(year, quarter, timezone \\ "Etc/UTC")` from Task 1.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -518,7 +518,7 @@ git commit -m "Add quarter/3 tests"
 - Test: `test/chronology_test.exs` (append a `describe "week/3"` block)
 
 **Interfaces:**
-- Consumes: `Chronology.week(year, week, timezone \\ "UTC")` from Task 1.
+- Consumes: `Chronology.week(year, week, timezone \\ "Etc/UTC")` from Task 1.
 
 - [ ] **Step 1: Write the failing tests**
 
