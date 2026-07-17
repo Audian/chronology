@@ -24,229 +24,219 @@
 
 defmodule Chronology do
   @moduledoc """
-  A simple module to generate date ranges
+  Generate date ranges for humanized references such as `:last_week`,
+  `:past_year`, or a specific `quarter/3` or ISO-8601 `week/3`.
+
+  All calculations use native Elixir `DateTime`/`Date` backed by the pure-Elixir
+  `tz` timezone database (`Tz.TimeZoneDatabase`), passed explicitly — callers do
+  not need to configure `Calendar.put_time_zone_database/1`.
+
+  ## DST resolution
+
+  When a wall-clock boundary (e.g. midnight) falls in a DST gap the first valid
+  instant after the gap is used; when it is ambiguous the earlier instant is used.
   """
 
   require Logger
 
   # -- module attributes -- #
-  @default_tz "UTC"
+  @default_tz "Etc/UTC"
+  @tzdb Tz.TimeZoneDatabase
+  @start_time ~T[00:00:00.000000]
+  @end_time ~T[23:59:59.999999]
 
   # -- public functions -- #
 
   @doc """
-  Return a date range for the supplied period. Time periods can be requested
-  as the period in atoms and an optional time zone. The default timezone is
-  UTC.
+  Return a `%{start:, finish:}` date range for `period` in `timezone`
+  (default `"UTC"`).
 
-  ### Time Periods
+  Pass an optional `reference` `DateTime` to compute the range relative to a
+  fixed instant instead of "now"; it is converted into `timezone`.
 
-  | time period    | Period description       |
-  |----------------|--------------------------|
-  | :today         | Today                    |
-  | :yesterday     | Yesterday                |
-  | :this_week     | The current week         |
-  | :this_month    | The current month        |
-  | :this_year     | The current year         |
-  | :this_quarter  | The current quarter      |
-  | :last_week     | The last week (Mon-Sun)  |
-  | :last_month    | The last full month      |
-  | :last_year     | The last full year       |
-  | :last_quarter  | The last full quarter    |
-  | :past_week     | Past 7 days              |
-  | :past_month    | Past month (date to date)|
-  | :past_year     | Past 365 days            |
-  | :previous_year | 2 years ago              |
+  ## Periods
 
-  ```elixir
-  iex> Chronology.range(:today)
-  {:ok,
-   %{
-     finish: #DateTime<2022-11-01 23:59:59.999999-07:00 PDT America/Los_Angeles>,
-     start: #DateTime<2022-11-01 00:00:00.000000-07:00 PDT America/Los_Angeles>
-   }}
-
-  iex> Chronology.range(:yesterday, "America/Los_Angeles")
-  {:ok,
-   %{
-     finish: #DateTime<2022-10-31 23:59:59.999999-07:00 PDT America/Los_Angeles>,
-     start: #DateTime<2022-10-31 00:00:00.000000-07:00 PDT America/Los_Angeles>
-   }}
-
-  iex> Chronology.range(:last_quarter, "Asia/Calcutta")
-  {:ok,
-   %{
-     finish: #DateTime<2022-09-30 23:59:59.999999+05:30 IST Asia/Calcutta>,
-     start: #DateTime<2022-07-01 00:00:00.000000+05:30 IST Asia/Calcutta>
-   }}
-  ```
+  | period          | start                     | finish            |
+  |-----------------|---------------------------|-------------------|
+  | `:today`        | start of today            | end of today      |
+  | `:yesterday`    | start of yesterday        | end of yesterday  |
+  | `:this_week`    | Monday of this week       | end of today      |
+  | `:last_week`    | Monday of last week       | Sunday of last wk |
+  | `:past_week`    | 7 days ago (now)          | now               |
+  | `:past_month`   | 1 month ago (now)         | now               |
+  | `:past_year`    | 1 year ago (now)          | now               |
+  | `:this_month`   | 1st of this month         | end of today      |
+  | `:last_month`   | 1st of last month         | last day last mo  |
+  | `:this_quarter` | 1st day of this quarter   | end of today      |
+  | `:last_quarter` | 1st day of last quarter   | last day last qtr |
+  | `:this_year`    | Jan 1 of this year        | end of today      |
+  | `:last_year`    | Jan 1 of last year        | Dec 31 last year  |
+  | `:previous_year`| Jan 1 two years ago       | Dec 31 two yrs ago|
   """
-  @spec range(period :: atom(), timezone :: String.t()) :: {:ok, map()} | {:error, term()}
-  def range(period, timezone \\ @default_tz) do
+  @spec range(atom(), String.t(), DateTime.t() | nil) :: {:ok, map()} | {:error, term()}
+  def range(period, timezone \\ @default_tz, reference \\ nil) do
+    with {:ok, now} <- reference_now(reference, timezone) do
+      build_range(period, now)
+    end
+  end
+
+  @doc """
+  Return the full range for `quarter` (1..4) of `year` in `timezone`.
+
+  Returns `{:error, :invalid_quarter}` when `quarter` is outside `1..4`.
+  """
+  @spec quarter(pos_integer(), 1..4, String.t()) :: {:ok, map()} | {:error, term()}
+  def quarter(year, quarter, timezone \\ @default_tz)
+
+  def quarter(year, quarter, timezone) when quarter in 1..4 do
+    first_month = (quarter - 1) * 3 + 1
+    last_month = quarter * 3
+    last_day = Date.end_of_month(Date.new!(year, last_month, 1))
+
+    with {:ok, start} <- to_datetime(Date.new!(year, first_month, 1), @start_time, timezone),
+         {:ok, finish} <- to_datetime(last_day, @end_time, timezone) do
+      {:ok, %{start: start, finish: finish}}
+    end
+  end
+
+  def quarter(_year, _quarter, _timezone), do: {:error, :invalid_quarter}
+
+  @doc """
+  Return the full range for ISO-8601 `week` of `year` in `timezone`.
+
+  Weeks start Monday; week 1 is the week containing Jan 4. A year has 52 or 53
+  weeks. Returns `{:error, :invalid_week}` when `week` is outside that range.
+  """
+  @spec week(pos_integer(), pos_integer(), String.t()) :: {:ok, map()} | {:error, term()}
+  def week(year, week, timezone \\ @default_tz) do
+    week1_monday = Date.beginning_of_week(Date.new!(year, 1, 4))
+    last_week_monday = Date.beginning_of_week(Date.new!(year, 12, 28))
+    weeks_in_year = div(Date.diff(last_week_monday, week1_monday), 7) + 1
+
+    if week in 1..weeks_in_year do
+      monday = Date.add(week1_monday, (week - 1) * 7)
+      sunday = Date.add(monday, 6)
+
+      with {:ok, start} <- to_datetime(monday, @start_time, timezone),
+           {:ok, finish} <- to_datetime(sunday, @end_time, timezone) do
+        {:ok, %{start: start, finish: finish}}
+      end
+    else
+      {:error, :invalid_week}
+    end
+  end
+
+  # -- private functions -- #
+
+  defp reference_now(nil, timezone), do: DateTime.now(timezone, @tzdb)
+  defp reference_now(%DateTime{} = reference, timezone),
+    do: DateTime.shift_zone(reference, timezone, @tzdb)
+
+  defp build_range(period, now) do
     case period do
       :today ->
-        start =
-          Timex.now(timezone)
-          |> Timex.beginning_of_day()
-
-        finish =
-          Timex.now(timezone)
-          |> Timex.end_of_day()
-
-        {:ok, %{start: start, finish: finish}}
+        {:ok, %{start: beginning_of_day(now), finish: end_of_day(now)}}
 
       :yesterday ->
-        start =
-          Timex.now(timezone)
-          |> Timex.shift(days: -1)
-          |> Timex.beginning_of_day()
-
-        finish =
-          Timex.now(timezone)
-          |> Timex.shift(days: -1)
-          |> Timex.end_of_day()
-
-        {:ok, %{start: start, finish: finish}}
+        day = shift(now, day: -1)
+        {:ok, %{start: beginning_of_day(day), finish: end_of_day(day)}}
 
       :this_week ->
-        start =
-          Timex.now(timezone)
-          |> Timex.beginning_of_week()
-
-        finish =
-          Timex.now(timezone)
-          |> Timex.end_of_day()
-
-        {:ok, %{start: start, finish: finish}}
+        {:ok, %{start: beginning_of_week(now), finish: end_of_day(now)}}
 
       :last_week ->
-        start =
-          Timex.now(timezone)
-          |> Timex.shift(days: -7)
-          |> Timex.beginning_of_week()
-
-        finish =
-          Timex.now(timezone)
-          |> Timex.shift(days: -7)
-          |> Timex.end_of_week()
-
-        {:ok, %{start: start, finish: finish}}
+        week = shift(now, day: -7)
+        {:ok, %{start: beginning_of_week(week), finish: end_of_week(week)}}
 
       :past_week ->
-        start =
-          Timex.now(timezone)
-          |> Timex.shift(days: -7)
-
-        finish = Timex.now(timezone)
-
-        {:ok, %{start: start, finish: finish}}
+        {:ok, %{start: shift(now, day: -7), finish: now}}
 
       :past_month ->
-        start =
-          Timex.now(timezone)
-          |> Timex.shift(months: -1)
-
-        finish = Timex.now(timezone)
-
-        {:ok, %{start: start, finish: finish}}
+        {:ok, %{start: shift(now, month: -1), finish: now}}
 
       :past_year ->
-        start =
-          Timex.now(timezone)
-          |> Timex.shift(years: -1)
-
-        finish = Timex.now(timezone)
-
-        {:ok, %{start: start, finish: finish}}
+        {:ok, %{start: shift(now, year: -1), finish: now}}
 
       :this_month ->
-        start =
-          Timex.now(timezone)
-          |> Timex.beginning_of_month()
-
-        finish =
-          Timex.now(timezone)
-          |> Timex.end_of_day()
-
-        {:ok, %{start: start, finish: finish}}
+        {:ok, %{start: beginning_of_month(now), finish: end_of_day(now)}}
 
       :last_month ->
-        start =
-          Timex.now(timezone)
-          |> Timex.shift(months: -1)
-          |> Timex.beginning_of_month()
-
-        finish =
-          Timex.now(timezone)
-          |> Timex.shift(months: -1)
-          |> Timex.end_of_month()
-
-        {:ok, %{start: start, finish: finish}}
+        month = shift(now, month: -1)
+        {:ok, %{start: beginning_of_month(month), finish: end_of_month(month)}}
 
       :this_quarter ->
-        start =
-          Timex.now(timezone)
-          |> Timex.beginning_of_quarter()
-
-        finish =
-          Timex.now(timezone)
-          |> Timex.end_of_quarter()
-
-        {:ok, %{start: start, finish: finish}}
+        {:ok, %{start: beginning_of_quarter(now), finish: end_of_day(now)}}
 
       :last_quarter ->
-        start =
-          Timex.now(timezone)
-          |> Timex.shift(months: -3)
-          |> Timex.beginning_of_quarter()
-
-        finish =
-          Timex.now(timezone)
-          |> Timex.shift(months: -3)
-          |> Timex.end_of_quarter()
-
-        {:ok, %{start: start, finish: finish}}
+        quarter = shift(now, month: -3)
+        {:ok, %{start: beginning_of_quarter(quarter), finish: end_of_quarter(quarter)}}
 
       :this_year ->
-        start =
-          Timex.now(timezone)
-          |> Timex.beginning_of_year()
-
-        finish =
-          Timex.now(timezone)
-          |> Timex.end_of_year()
-
-        {:ok, %{start: start, finish: finish}}
+        {:ok, %{start: beginning_of_year(now), finish: end_of_day(now)}}
 
       :last_year ->
-        start =
-          Timex.now(timezone)
-          |> Timex.shift(years: -1)
-          |> Timex.beginning_of_year()
-
-        finish =
-          Timex.now(timezone)
-          |> Timex.shift(years: -1)
-          |> Timex.end_of_year()
-
-        {:ok, %{start: start, finish: finish}}
+        year = shift(now, year: -1)
+        {:ok, %{start: beginning_of_year(year), finish: end_of_year(year)}}
 
       :previous_year ->
-        start =
-          Timex.now(timezone)
-          |> Timex.shift(years: -2)
-          |> Timex.beginning_of_year()
-
-        finish =
-          Timex.now(timezone)
-          |> Timex.shift(years: -2)
-          |> Timex.end_of_year()
-
-        {:ok, %{start: start, finish: finish}}
+        year = shift(now, year: -2)
+        {:ok, %{start: beginning_of_year(year), finish: end_of_year(year)}}
 
       _ ->
         Logger.error("Unsupported period provided")
         {:error, :invalid_period}
     end
+  end
+
+  defp shift(datetime, duration), do: DateTime.shift(datetime, duration, @tzdb)
+
+  defp beginning_of_day(dt), do: to_datetime!(DateTime.to_date(dt), @start_time, dt.time_zone)
+  defp end_of_day(dt), do: to_datetime!(DateTime.to_date(dt), @end_time, dt.time_zone)
+
+  defp beginning_of_week(dt),
+    do: to_datetime!(Date.beginning_of_week(DateTime.to_date(dt)), @start_time, dt.time_zone)
+
+  defp end_of_week(dt),
+    do: to_datetime!(Date.end_of_week(DateTime.to_date(dt)), @end_time, dt.time_zone)
+
+  defp beginning_of_month(dt),
+    do: to_datetime!(Date.beginning_of_month(DateTime.to_date(dt)), @start_time, dt.time_zone)
+
+  defp end_of_month(dt),
+    do: to_datetime!(Date.end_of_month(DateTime.to_date(dt)), @end_time, dt.time_zone)
+
+  defp beginning_of_quarter(dt) do
+    date = DateTime.to_date(dt)
+    first_month = (Date.quarter_of_year(date) - 1) * 3 + 1
+    to_datetime!(Date.new!(date.year, first_month, 1), @start_time, dt.time_zone)
+  end
+
+  defp end_of_quarter(dt) do
+    date = DateTime.to_date(dt)
+    last_month = Date.quarter_of_year(date) * 3
+    last_day = Date.end_of_month(Date.new!(date.year, last_month, 1))
+    to_datetime!(last_day, @end_time, dt.time_zone)
+  end
+
+  defp beginning_of_year(dt),
+    do: to_datetime!(Date.new!(DateTime.to_date(dt).year, 1, 1), @start_time, dt.time_zone)
+
+  defp end_of_year(dt),
+    do: to_datetime!(Date.new!(DateTime.to_date(dt).year, 12, 31), @end_time, dt.time_zone)
+
+  # Build a zoned DateTime, resolving DST gaps/ambiguities.
+  defp to_datetime(%Date{} = date, %Time{} = time, timezone) do
+    case DateTime.new(date, time, timezone, @tzdb) do
+      {:ok, dt} -> {:ok, dt}
+      {:gap, _before, dt_after} -> {:ok, dt_after}
+      {:ambiguous, dt_first, _second} -> {:ok, dt_first}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  # Same as to_datetime/3 but for a timezone already known valid (raises otherwise).
+  defp to_datetime!(date, time, timezone) do
+    {:ok, dt} = to_datetime(date, time, timezone)
+    dt
   end
 end

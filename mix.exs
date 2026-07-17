@@ -41,8 +41,8 @@ defmodule Chronology.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # timezone and datetime parsers
-      {:timex,    "~> 3.7"},
+      # timezone database (pure Elixir, no runtime deps)
+      {:tz, "~> 0.28"},
 
       # code quality and documentation
       {:ex_doc,     "~> 0.38",  only: [:dev], runtime: false},
