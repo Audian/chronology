@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Elixir floor: `~> 1.14` in mix.exs stays; the code relies on `DateTime.shift/3` (Elixir 1.17+) — the repo runs 1.19.5, so this is fine. Do **not** lower usage below what 1.17 provides.
+- Elixir floor: bump mix.exs to `elixir: "~> 1.17"`. The code relies on `DateTime.shift/3`, introduced in Elixir 1.17.0, so the published compatibility contract must require 1.17+ (the original `~> 1.14` would let consumers on 1.14–1.16 resolve the lib and then crash with `UndefinedFunctionError`). The repo runs 1.19.5 and CI uses 1.18.4, both of which satisfy `~> 1.17`.
 - Timezone database is passed **explicitly** as `@tzdb Tz.TimeZoneDatabase` to every `DateTime` call. Never call `Calendar.put_time_zone_database/1`.
 - Public return shape is exactly `{:ok, %{start: DateTime.t(), finish: DateTime.t()}}` or `{:error, term()}`. Map keys are `:start` and `:finish`.
 - Start-of-period time is `~T[00:00:00.000000]`; end-of-period time is `~T[23:59:59.999999]`.
