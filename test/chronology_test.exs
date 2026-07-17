@@ -162,4 +162,47 @@ defmodule ChronologyTest do
       assert {:error, :time_zone_not_found} = Chronology.quarter(2026, 1, "Not/AZone")
     end
   end
+
+  describe "week/3 (ISO-8601)" do
+    test "week 1 of 2026 spills into December 2025" do
+      assert {:ok, %{start: ~U[2025-12-29 00:00:00.000000Z], finish: ~U[2026-01-04 23:59:59.999999Z]}} =
+               Chronology.week(2026, 1)
+    end
+
+    test "a mid-year week" do
+      assert {:ok, %{start: ~U[2026-07-20 00:00:00.000000Z], finish: ~U[2026-07-26 23:59:59.999999Z]}} =
+               Chronology.week(2026, 30)
+    end
+
+    test "accepts week 53 in a 53-week year (2020)" do
+      assert {:ok, %{start: ~U[2020-12-28 00:00:00.000000Z], finish: ~U[2021-01-03 23:59:59.999999Z]}} =
+               Chronology.week(2020, 53)
+    end
+
+    test "rejects week 54 in a 53-week year" do
+      assert {:error, :invalid_week} = Chronology.week(2020, 54)
+    end
+
+    test "rejects week 53 in a 52-week year (2025)" do
+      assert {:error, :invalid_week} = Chronology.week(2025, 53)
+    end
+
+    test "rejects week 0" do
+      assert {:error, :invalid_week} = Chronology.week(2026, 0)
+    end
+
+    test "honors the timezone" do
+      {:ok, %{start: start, finish: finish}} = Chronology.week(2026, 30, "Asia/Calcutta")
+      assert start.time_zone == "Asia/Calcutta"
+      assert start.utc_offset == 19_800
+      assert DateTime.to_date(start) == ~D[2026-07-20]
+      assert DateTime.to_time(start) == ~T[00:00:00.000000]
+      assert DateTime.to_date(finish) == ~D[2026-07-26]
+      assert DateTime.to_time(finish) == ~T[23:59:59.999999]
+    end
+
+    test "unknown timezone propagates an error" do
+      assert {:error, :time_zone_not_found} = Chronology.week(2026, 1, "Not/AZone")
+    end
+  end
 end
