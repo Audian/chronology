@@ -15,7 +15,7 @@
 - Public return shape is exactly `{:ok, %{start: DateTime.t(), finish: DateTime.t()}}` or `{:error, term()}`. Map keys are `:start` and `:finish`.
 - Start-of-period time is `~T[00:00:00.000000]`; end-of-period time is `~T[23:59:59.999999]`.
 - Week numbering is ISO-8601: weeks start Monday; week 1 contains Jan 4; a year has 52 or 53 weeks.
-- Default timezone is `"UTC"`.
+- Default timezone is `"Etc/UTC"` (canonical UTC — matches `~U[...]` sigils and native `DateTime.utc_now/0`; passing the non-canonical `"UTC"` yields `time_zone: "UTC"` which won't struct-match `~U` sigils).
 - Error atoms: `:invalid_period`, `:invalid_quarter`, `:invalid_week`; timezone failures propagate `:time_zone_not_found` from stdlib.
 
 ---
@@ -73,72 +73,72 @@ defmodule ChronologyTest do
   describe "range/3 in UTC" do
     test ":today" do
       assert {:ok, %{start: ~U[2026-07-17 00:00:00.000000Z], finish: ~U[2026-07-17 23:59:59.999999Z]}} =
-               Chronology.range(:today, "UTC", @ref)
+               Chronology.range(:today, "Etc/UTC", @ref)
     end
 
     test ":yesterday" do
       assert {:ok, %{start: ~U[2026-07-16 00:00:00.000000Z], finish: ~U[2026-07-16 23:59:59.999999Z]}} =
-               Chronology.range(:yesterday, "UTC", @ref)
+               Chronology.range(:yesterday, "Etc/UTC", @ref)
     end
 
     test ":this_week (Mon start .. end of today)" do
       assert {:ok, %{start: ~U[2026-07-13 00:00:00.000000Z], finish: ~U[2026-07-17 23:59:59.999999Z]}} =
-               Chronology.range(:this_week, "UTC", @ref)
+               Chronology.range(:this_week, "Etc/UTC", @ref)
     end
 
     test ":last_week (full previous Mon..Sun)" do
       assert {:ok, %{start: ~U[2026-07-06 00:00:00.000000Z], finish: ~U[2026-07-12 23:59:59.999999Z]}} =
-               Chronology.range(:last_week, "UTC", @ref)
+               Chronology.range(:last_week, "Etc/UTC", @ref)
     end
 
     test ":past_week (raw -7d .. now)" do
       assert {:ok, %{start: ~U[2026-07-10 15:30:00.000000Z], finish: ~U[2026-07-17 15:30:00.000000Z]}} =
-               Chronology.range(:past_week, "UTC", @ref)
+               Chronology.range(:past_week, "Etc/UTC", @ref)
     end
 
     test ":past_month (raw -1mo .. now)" do
       assert {:ok, %{start: ~U[2026-06-17 15:30:00.000000Z], finish: ~U[2026-07-17 15:30:00.000000Z]}} =
-               Chronology.range(:past_month, "UTC", @ref)
+               Chronology.range(:past_month, "Etc/UTC", @ref)
     end
 
     test ":past_year (raw -1yr .. now)" do
       assert {:ok, %{start: ~U[2025-07-17 15:30:00.000000Z], finish: ~U[2026-07-17 15:30:00.000000Z]}} =
-               Chronology.range(:past_year, "UTC", @ref)
+               Chronology.range(:past_year, "Etc/UTC", @ref)
     end
 
     test ":this_month (1st .. end of today)" do
       assert {:ok, %{start: ~U[2026-07-01 00:00:00.000000Z], finish: ~U[2026-07-17 23:59:59.999999Z]}} =
-               Chronology.range(:this_month, "UTC", @ref)
+               Chronology.range(:this_month, "Etc/UTC", @ref)
     end
 
     test ":last_month (full previous month)" do
       assert {:ok, %{start: ~U[2026-06-01 00:00:00.000000Z], finish: ~U[2026-06-30 23:59:59.999999Z]}} =
-               Chronology.range(:last_month, "UTC", @ref)
+               Chronology.range(:last_month, "Etc/UTC", @ref)
     end
 
     test ":this_quarter (Q start .. end of today) — corrected semantics" do
       assert {:ok, %{start: ~U[2026-07-01 00:00:00.000000Z], finish: ~U[2026-07-17 23:59:59.999999Z]}} =
-               Chronology.range(:this_quarter, "UTC", @ref)
+               Chronology.range(:this_quarter, "Etc/UTC", @ref)
     end
 
     test ":last_quarter (full previous quarter)" do
       assert {:ok, %{start: ~U[2026-04-01 00:00:00.000000Z], finish: ~U[2026-06-30 23:59:59.999999Z]}} =
-               Chronology.range(:last_quarter, "UTC", @ref)
+               Chronology.range(:last_quarter, "Etc/UTC", @ref)
     end
 
     test ":this_year (Jan 1 .. end of today) — corrected semantics" do
       assert {:ok, %{start: ~U[2026-01-01 00:00:00.000000Z], finish: ~U[2026-07-17 23:59:59.999999Z]}} =
-               Chronology.range(:this_year, "UTC", @ref)
+               Chronology.range(:this_year, "Etc/UTC", @ref)
     end
 
     test ":last_year (full previous year)" do
       assert {:ok, %{start: ~U[2025-01-01 00:00:00.000000Z], finish: ~U[2025-12-31 23:59:59.999999Z]}} =
-               Chronology.range(:last_year, "UTC", @ref)
+               Chronology.range(:last_year, "Etc/UTC", @ref)
     end
 
     test ":previous_year (year before last)" do
       assert {:ok, %{start: ~U[2024-01-01 00:00:00.000000Z], finish: ~U[2024-12-31 23:59:59.999999Z]}} =
-               Chronology.range(:previous_year, "UTC", @ref)
+               Chronology.range(:previous_year, "Etc/UTC", @ref)
     end
   end
 
@@ -190,7 +190,7 @@ defmodule ChronologyTest do
     end
 
     test "unknown period" do
-      assert {:error, :invalid_period} = Chronology.range(:nonsense, "UTC", @ref)
+      assert {:error, :invalid_period} = Chronology.range(:nonsense, "Etc/UTC", @ref)
     end
   end
 end
@@ -224,7 +224,7 @@ defmodule Chronology do
   require Logger
 
   # -- module attributes -- #
-  @default_tz "UTC"
+  @default_tz "Etc/UTC"
   @tzdb Tz.TimeZoneDatabase
   @start_time ~T[00:00:00.000000]
   @end_time ~T[23:59:59.999999]
