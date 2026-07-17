@@ -31,7 +31,7 @@ Removes Timex, adds tz, and reimplements `range/3` (with an optional reference i
 
 **Interfaces:**
 - Produces:
-  - `Chronology.range(period :: atom(), timezone :: String.t() \\ "UTC", reference :: DateTime.t() | nil \\ nil) :: {:ok, %{start: DateTime.t(), finish: DateTime.t()}} | {:error, term()}`
+  - `Chronology.range(period :: atom(), timezone :: String.t() \\ "Etc/UTC", reference :: DateTime.t() | nil \\ nil) :: {:ok, %{start: DateTime.t(), finish: DateTime.t()}} | {:error, term()}`
   - Private helpers used by Tasks 2–3: `to_datetime(date, time, timezone) :: {:ok, DateTime.t()} | {:error, term()}` and `to_datetime!(date, time, timezone) :: DateTime.t()` (both apply DST resolution).
 
 - [ ] **Step 1: Swap the dependency in `mix.exs`**
