@@ -5,12 +5,48 @@ jobs:
       - image: cimg/elixir:1.18.4-erlang-26.2.1
     steps:
       - checkout
+      # cache key: bump the v1 prefix when the docker image (Elixir/OTP) changes;
+      # the PLT lives under _build/dev/dialyxir_*.plt and is keyed to mix.lock
+      - restore_cache:
+          keys:
+            - v1-build-{{ checksum "mix.lock" }}
+            - v1-build-
       - run: mix deps.get
       - run: mix deps.compile
       - run: mix deps.audit
       - run: mix sobelow --config .sobelow-conf
+      # build the PLT separately so it is cached even when the analysis
+      # step below fails with findings
+      - run: mix dialyzer --plt
+      - save_cache:
+          key: v1-build-{{ checksum "mix.lock" }}
+          paths:
+            - deps
+            - _build
+            - ~/.mix
       - run: mix dialyzer
+  test:
+    environment:
+      MIX_ENV: test
+    docker:
+      - image: cimg/elixir:1.18.4-erlang-26.2.1
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-test-{{ checksum "mix.lock" }}
+            - v1-test-
+      - run: mix deps.get
+      - run: mix deps.compile
+      - run: mix test
+      - save_cache:
+          key: v1-test-{{ checksum "mix.lock" }}
+          paths:
+            - deps
+            - _build
+            - ~/.mix
 workflows:
   test:
     jobs:
       - build
+      - test
