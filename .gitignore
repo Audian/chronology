@@ -25,4 +25,3 @@ chronology-*.tar
 *.secret.exs
 *.tmp
 *.old
-.tool-versions
