@@ -127,4 +127,39 @@ defmodule ChronologyTest do
       assert {:error, :invalid_period} = Chronology.range(:nonsense, "UTC", @ref)
     end
   end
+
+  describe "quarter/3" do
+    test "each quarter of 2026 in UTC" do
+      assert {:ok, %{start: ~U[2026-01-01 00:00:00.000000Z], finish: ~U[2026-03-31 23:59:59.999999Z]}} =
+               Chronology.quarter(2026, 1)
+
+      assert {:ok, %{start: ~U[2026-04-01 00:00:00.000000Z], finish: ~U[2026-06-30 23:59:59.999999Z]}} =
+               Chronology.quarter(2026, 2)
+
+      assert {:ok, %{start: ~U[2026-07-01 00:00:00.000000Z], finish: ~U[2026-09-30 23:59:59.999999Z]}} =
+               Chronology.quarter(2026, 3)
+
+      assert {:ok, %{start: ~U[2026-10-01 00:00:00.000000Z], finish: ~U[2026-12-31 23:59:59.999999Z]}} =
+               Chronology.quarter(2026, 4)
+    end
+
+    test "honors the timezone" do
+      {:ok, %{start: start, finish: finish}} = Chronology.quarter(2026, 2, "Asia/Calcutta")
+      assert start.time_zone == "Asia/Calcutta"
+      assert start.utc_offset == 19_800
+      assert DateTime.to_date(start) == ~D[2026-04-01]
+      assert DateTime.to_time(start) == ~T[00:00:00.000000]
+      assert DateTime.to_date(finish) == ~D[2026-06-30]
+      assert DateTime.to_time(finish) == ~T[23:59:59.999999]
+    end
+
+    test "rejects quarters outside 1..4" do
+      assert {:error, :invalid_quarter} = Chronology.quarter(2026, 0)
+      assert {:error, :invalid_quarter} = Chronology.quarter(2026, 5)
+    end
+
+    test "unknown timezone propagates an error" do
+      assert {:error, :time_zone_not_found} = Chronology.quarter(2026, 1, "Not/AZone")
+    end
+  end
 end
