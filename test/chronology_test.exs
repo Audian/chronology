@@ -128,7 +128,7 @@ defmodule ChronologyTest do
       {:ok, %{start: start}} = Chronology.range(:today, "America/Sao_Paulo", ref)
 
       assert start.time_zone == "America/Sao_Paulo"
-      # resolve/1 advanced past the non-existent midnight
+      # the DST-gap handling in to_datetime/3 advanced past the non-existent midnight
       assert Time.compare(DateTime.to_time(start), ~T[00:00:00.000000]) == :gt
     end
   end
@@ -146,7 +146,11 @@ defmodule ChronologyTest do
     end
 
     test "unknown period" do
-      assert {:error, :invalid_period} = Chronology.range(:nonsense, "UTC", @ref)
+      assert {:error, :invalid_period} = Chronology.range(:nonsense, "Etc/UTC", @ref)
+    end
+
+    test "unknown timezone with a supplied reference" do
+      assert {:error, :time_zone_not_found} = Chronology.range(:today, "Not/AZone", @ref)
     end
   end
 

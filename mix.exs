@@ -25,7 +25,7 @@ defmodule Chronology.MixProject do
     [
       app: :chronology,
       version: "1.0.1",
-      elixir: "~> 1.14",
+      elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
