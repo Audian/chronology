@@ -183,7 +183,7 @@ defmodule Chronology do
         {:ok, %{start: beginning_of_year(year), finish: end_of_year(year)}}
 
       _ ->
-        Logger.error("Unsupported period provided")
+        Logger.error("Unsupported period provided: #{inspect(period)}")
         {:error, :invalid_period}
     end
   end

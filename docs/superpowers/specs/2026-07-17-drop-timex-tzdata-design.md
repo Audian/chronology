@@ -69,13 +69,13 @@ Signature gains an optional reference instant (default arg chain generates
 
 ```elixir
 @spec range(atom(), String.t(), DateTime.t() | nil) :: {:ok, map()} | {:error, term()}
-def range(period, timezone \\ "UTC", reference \\ nil)
+def range(period, timezone \\ "Etc/UTC", reference \\ nil)
 ```
 
 - `reference == nil` → uses `DateTime.now(timezone, @tzdb)` as "now".
-- A supplied `reference` is used verbatim as "now". This makes every branch
-  deterministically testable and is useful to callers who want ranges relative
-  to a fixed instant.
+- A supplied `reference` is converted into `timezone` (via `DateTime.shift_zone/3`)
+  and used as "now". This makes every branch deterministically testable and is
+  useful to callers who want ranges relative to a fixed instant.
 
 Return shape is unchanged: `{:ok, %{start: DateTime.t(), finish: DateTime.t()}}`
 or `{:error, term()}`.

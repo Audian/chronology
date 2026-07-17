@@ -128,8 +128,9 @@ defmodule ChronologyTest do
       {:ok, %{start: start}} = Chronology.range(:today, "America/Sao_Paulo", ref)
 
       assert start.time_zone == "America/Sao_Paulo"
-      # the DST-gap handling in to_datetime/3 advanced past the non-existent midnight
-      assert Time.compare(DateTime.to_time(start), ~T[00:00:00.000000]) == :gt
+      # the DST-gap handling in to_datetime/3 resolves the non-existent midnight
+      # to the first valid instant after the gap: 01:00 local (-02:00).
+      assert Time.compare(DateTime.to_time(start), ~T[01:00:00]) == :eq
     end
   end
 

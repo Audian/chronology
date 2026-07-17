@@ -55,7 +55,7 @@ iex> Chronology.week(2026, 30)
 | :previous_year | The year before last         |
 | :past_week     | Past 7 days                  |
 | :past_month    | Past month (date to date)    |
-| :past_year     | Past 365 days                |
+| :past_year     | Past year (date to date)     |
 
 `quarter(year, quarter)` and `week(year, week)` return the **full** period.
 `week/3` uses ISO-8601 numbering (weeks start Monday; week 1 contains Jan 4).
