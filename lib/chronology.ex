@@ -49,7 +49,7 @@ defmodule Chronology do
 
   @doc """
   Return a `%{start:, finish:}` date range for `period` in `timezone`
-  (default `"UTC"`).
+  (default `"Etc/UTC"`).
 
   Pass an optional `reference` `DateTime` to compute the range relative to a
   fixed instant instead of "now"; it is converted into `timezone`.
